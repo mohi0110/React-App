@@ -2,9 +2,7 @@ import React, { useContext } from 'react';
 import { Form } from 'react-bootstrap';
 import ModalHOC from './modalHoc';
 import { ReturnContext } from './Index';
-const btnName = 'Return';
-const BtnClass = 'btn btn-danger m-1';
-const modalName = 'Return Product';
+
 function ReturnItem() {
   const rtnContext = useContext(ReturnContext);
   return (
@@ -30,4 +28,8 @@ function ReturnItem() {
   );
 }
 
-export default ModalHOC(modalName, btnName, BtnClass, ReturnItem);
+export default ModalHOC({
+  modalName: 'Return a Product',
+  buttonName: 'Return',
+  buttonClass: 'btn btn-danger m-1',
+})(ReturnItem);

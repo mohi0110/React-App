@@ -2,9 +2,7 @@ import React, { useContext } from 'react';
 import { Form } from 'react-bootstrap';
 import ModalHOC from './modalHoc';
 import { BookContext } from './Index';
-const btnName = 'Book';
-const BtnClass = 'btn btn-primary m-1';
-const modalName = 'Book Product';
+
 function BookItems({ handleBookModal, handleCloseModal }) {
   const bkContext = useContext(BookContext);
 
@@ -190,7 +188,7 @@ function BookItems({ handleBookModal, handleCloseModal }) {
                 Cancel
               </button>
               <button
-                type="submit"
+                type="button"
                 className="btn btn-primary m-1"
                 onClick={() => {
                   handleCloseModal();
@@ -205,4 +203,8 @@ function BookItems({ handleBookModal, handleCloseModal }) {
     </>
   );
 }
-export default ModalHOC(modalName, btnName, BtnClass, BookItems);
+export default ModalHOC({
+  modalName: 'Book a Product',
+  buttonName: 'Book',
+  buttonClass: 'btn btn-primary m-1',
+})(BookItems);

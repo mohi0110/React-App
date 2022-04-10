@@ -14,68 +14,81 @@ function RentalIndex() {
   const [searchTextbox, setSearchTextbox] = useState('');
   const [selectedProd, setSelectedProd] = useState({});
   const [rentedList, setRentedList] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [showBookForm, setShowBookform] = useState(true);
+  //localStorage.removeItem('RentedProdTable');
   localStorage.getItem('orginData') == null &&
     localStorage.setItem('orginData', JSON.stringify(RentalData));
 
   useEffect(() => {
-    let localData = JSON.parse(localStorage.getItem('RentedProdTable03'));
+    let localData = JSON.parse(localStorage.getItem('RentedProdTable'));
     setRentedList(localData);
     setAllProdList(JSON.parse(localStorage.getItem('orginData')));
   }, []);
 
-  const handleSearch = useCallback((e) => {
-    setSearchTextbox(e.target.value);
-    let localData = JSON.parse(localStorage.getItem('RentedProdTable03'));
-    setRentedList(
-      localData.filter((data) =>
-        data.name.toLowerCase().includes(e.target.value)
-      )
-    );
-  }, []);
+  const handleSearch = useCallback(
+    (e) => {
+      setSearchTextbox(e.target.value);
+      let localData = JSON.parse(localStorage.getItem('RentedProdTable'));
+      setRentedList(
+        localData.filter((data) =>
+          data.name.toLowerCase().includes(e.target.value)
+        )
+      );
+    },
+    [rentedList, searchTextbox]
+  );
 
-  const handleFromDate = (e) => {
-    let todayDate = new Date(new Date().toLocaleDateString());
-    let frmDate = new Date(new Date(e.target.value).toLocaleDateString());
+  const handleFromDate = useCallback(
+    (e) => {
+      let todayDate = new Date(new Date().toLocaleDateString());
+      let frmDate = new Date(new Date(e.target.value).toLocaleDateString());
 
-    if (todayDate <= frmDate) {
-      setValidationErr(false);
-      setErrorMsg('');
-    } else {
-      setValidationErr(true);
-      setErrorMsg('choose valid Date');
-    }
-    let updateSelProd = { ...selectedProd, from_date: e.target.value };
-    setSelectedProd(updateSelProd);
-  };
+      if (todayDate <= frmDate) {
+        setValidationErr(false);
+        setErrorMsg('');
+      } else {
+        setValidationErr(true);
+        setErrorMsg('choose valid Date');
+      }
+      let updateSelProd = { ...selectedProd, from_date: e.target.value };
+      setSelectedProd(updateSelProd);
+    },
+    [selectedProd, isValidationErr, errorMsg]
+  );
 
-  const handleToDate = (e) => {
-    let frmDate = new Date(
-      new Date(selectedProd.from_date).toLocaleDateString()
-    );
-    let toDate = new Date(new Date(e.target.value).toLocaleDateString());
+  const handleToDate = useCallback(
+    (e) => {
+      let frmDate = new Date(
+        new Date(selectedProd.from_date).toLocaleDateString()
+      );
+      let toDate = new Date(new Date(e.target.value).toLocaleDateString());
 
-    if (selectedProd.from_date == undefined || frmDate > toDate) {
-      setValidationErr(true);
-      setErrorMsg('choose valid Date');
-    } else {
-      setValidationErr(false);
-      setErrorMsg('');
-    }
-    let updateSelProd = { ...selectedProd, to_date: e.target.value };
-    setSelectedProd(updateSelProd);
-  };
+      if (selectedProd.from_date == undefined || frmDate > toDate) {
+        setValidationErr(true);
+        setErrorMsg('choose valid Date');
+      } else {
+        setValidationErr(false);
+        setErrorMsg('');
+      }
+      let updateSelProd = { ...selectedProd, to_date: e.target.value };
+      setSelectedProd(updateSelProd);
+    },
+    [selectedProd, isValidationErr, errorMsg]
+  );
 
-  const onChangeProdList = (e) => {
-    const extractProd = allProdList.filter(
-      (data) => data.code == e.target.value
-    )[0];
-    let updateSelProd = { ...selectedProd, ...extractProd };
-    setSelectedProd(updateSelProd);
-  };
+  const onChangeProdList = useCallback(
+    (e) => {
+      console.log('test');
+      const extractProd = allProdList.filter(
+        (data) => data.code == e.target.value
+      )[0];
+      let updateSelProd = { ...selectedProd, ...extractProd };
+      setSelectedProd(updateSelProd);
+    },
+    [allProdList, selectedProd]
+  );
 
-  const handleBookItem = () => {
+  const handleBookItem = useCallback(() => {
     let bookingDays = Math.round(
       Math.abs(
         (new Date(selectedProd.from_date) - new Date(selectedProd.to_date)) /
@@ -98,34 +111,27 @@ function RentalIndex() {
       setValidationErr(true);
       setErrorMsg('choose date Greater than min Days');
     }
-  };
+  }, [showBookForm, selectedProd, isValidationErr, errorMsg]);
 
-  const handleCancelBooking = () => {
-    setShowBookform(true);
+  const handleCancelBooking = useCallback(() => {
     setSelectedProd({});
-  };
+    setShowBookform(true);
+  }, [selectedProd, showBookForm]);
 
-  const handleItemSubmit = (e) => {
+  const handleItemSubmit = () => {
     let uploadSelectedItem = rentedList
       ? [...rentedList, selectedProd]
       : [selectedProd];
-    localStorage.setItem(
-      'RentedProdTable03',
-      JSON.stringify(uploadSelectedItem)
-    );
+    localStorage.setItem('RentedProdTable', JSON.stringify(uploadSelectedItem));
     let copyAllProd = [...allProdList];
-    console.log('code', selectedProd.code);
+
     let itemIndex = copyAllProd.findIndex(
       (data) => data.code == selectedProd.code
     );
     copyAllProd[itemIndex].availability = false;
     localStorage.setItem('orginData', JSON.stringify(copyAllProd));
-    setRentedList(JSON.parse(localStorage.getItem('RentedProdTable03')));
-    setShowModal(false);
-    setShowModal(!showModal);
-    e.preventDefault();
+    setRentedList(JSON.parse(localStorage.getItem('RentedProdTable')));
   };
-
   return (
     <>
       <div className="container mt-4">
