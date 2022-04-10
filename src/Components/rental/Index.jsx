@@ -128,7 +128,7 @@ function RentalIndex() {
 
   return (
     <>
-      <div className="container">
+      <div className="container mt-4">
         <div className="row">
           <div className="col-8">
             <h3>Rental App</h3>

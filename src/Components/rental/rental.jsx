@@ -19,7 +19,7 @@ function Rental({ rentedList }) {
           </tr>
         </thead>
         <tbody>
-          {rentedList &&
+          {rentedList ? (
             rentedList.map((item, index) => (
               <tr key={item.code}>
                 <td>{index + 1}</td>
@@ -33,7 +33,14 @@ function Rental({ rentedList }) {
                 <td>{item.rental_days}</td>
                 <td>{item.rental_fees}</td>
               </tr>
-            ))}
+            ))
+          ) : (
+            <tr>
+              <td colSpan="10">
+                <h5 className="text-center">No booked products</h5>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </>
