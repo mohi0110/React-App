@@ -32,13 +32,14 @@ function BookItems({ handleBookModal, handleCloseModal }) {
                   aria-label="Default select example"
                   onChange={bkContext.onChangeProdList}>
                   <option defaultValue="Choose Product">Choose Product</option>
-                  {bkContext.allProdList
-                    .filter((data) => data.availability)
-                    .map((items) => (
-                      <option key={items.code} value={items.code}>
-                        {items.name}
-                      </option>
-                    ))}
+                  {bkContext.allProdList &&
+                    bkContext.allProdList
+                      .filter((data) => data.availability)
+                      .map((items) => (
+                        <option key={items.code} value={items.code}>
+                          {items.name}
+                        </option>
+                      ))}
                 </select>
               </div>
             </div>

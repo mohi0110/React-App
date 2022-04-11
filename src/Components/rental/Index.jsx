@@ -1,9 +1,16 @@
-import React, { useState, useEffect, createContext, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useCallback,
+  useMemo,
+} from 'react';
 import RentalData from '../../DataStructure/Data.json';
 import BookItems from './book';
 import Rental from './rental';
 import RentalSearch from './search';
 import ReturnItem from './returnProd';
+import ErrorBoundary from './errorHandle';
 export const BookContext = createContext();
 export const ReturnContext = createContext();
 
@@ -15,11 +22,16 @@ function RentalIndex() {
   const [selectedProd, setSelectedProd] = useState({});
   const [rentedList, setRentedList] = useState(null);
   const [showBookForm, setShowBookform] = useState(true);
-  const [usedMileage, setMileage] = useState(Number);
+  const [usedMileage, setMileage] = useState(0);
+  const [reProd, setRePro] = useState({});
+  const [invoice, setInvoice] = useState({ mileage: Number, total: Number });
+  const [showReturnForm, setShowReturnform] = useState(true);
 
+  // enable below to reset Local storage
   //localStorage.removeItem('RentedProdTable');
   //localStorage.removeItem('orginData');
-  localStorage.getItem('orginData') == null &&
+
+  localStorage.getItem('orginData') === null &&
     localStorage.setItem('orginData', JSON.stringify(RentalData));
 
   useEffect(() => {
@@ -28,16 +40,24 @@ function RentalIndex() {
     setAllProdList(JSON.parse(localStorage.getItem('orginData')));
   }, []);
 
-  const handleSearch = (e) => {
-    setSearchTextbox(e.target.value);
-    let localData = JSON.parse(localStorage.getItem('RentedProdTable')).filter(
-      (data) => data.name.toLowerCase().includes(e.target.value)
-    );
-    let uniqueData = [
-      ...new Map(localData.map((items) => [items.code, items])).values(),
-    ];
-    setRentedList(uniqueData);
-  };
+  // DISPLAY DATA AND SEARCH ********************************
+
+  const productData = useMemo(() => {
+    let displayData = allProdList;
+    if (searchTextbox) {
+      displayData = displayData.filter((data) =>
+        data.name.toLowerCase().includes(searchTextbox)
+      );
+    }
+    return displayData;
+  }, [allProdList, searchTextbox]);
+
+  const handleSearch = useCallback(
+    (e) => {
+      setSearchTextbox(e.target.value);
+    },
+    [setSearchTextbox]
+  );
 
   const handleFromDate = useCallback(
     (e) => {
@@ -54,7 +74,7 @@ function RentalIndex() {
       let updateSelProd = { ...selectedProd, from_date: e.target.value };
       setSelectedProd(updateSelProd);
     },
-    [selectedProd, isValidationErr, errorMsg]
+    [setErrorMsg, setValidationErr, selectedProd]
   );
 
   const handleToDate = useCallback(
@@ -64,7 +84,7 @@ function RentalIndex() {
       );
       let toDate = new Date(new Date(e.target.value).toLocaleDateString());
 
-      if (selectedProd.from_date == undefined || frmDate > toDate) {
+      if (selectedProd.from_date === undefined || frmDate > toDate) {
         setValidationErr(true);
         setErrorMsg('choose valid Date');
       } else {
@@ -74,14 +94,14 @@ function RentalIndex() {
       let updateSelProd = { ...selectedProd, to_date: e.target.value };
       setSelectedProd(updateSelProd);
     },
-    [selectedProd, isValidationErr, errorMsg]
+    [selectedProd, setValidationErr, setErrorMsg]
   );
 
   const onChangeProdList = useCallback(
     (e) => {
-      console.log('test');
+      setValidationErr(false);
       const extractProd = allProdList.filter(
-        (data) => data.code == e.target.value
+        (data) => data.code === e.target.value
       )[0];
       let updateSelProd = { ...selectedProd, ...extractProd };
       setSelectedProd(updateSelProd);
@@ -90,37 +110,50 @@ function RentalIndex() {
   );
 
   const handleBookItem = useCallback(() => {
-    let bookingDays = Math.round(
-      Math.abs(
-        (new Date(selectedProd.from_date) - new Date(selectedProd.to_date)) /
-          (24 * 60 * 60 * 1000)
-      )
-    );
+    if (Object.keys(selectedProd).length !== 0) {
+      let bookingDays = Math.round(
+        Math.abs(
+          (new Date(selectedProd.from_date) - new Date(selectedProd.to_date)) /
+            (24 * 60 * 60 * 1000)
+        )
+      );
 
-    if (selectedProd.minimum_rent_period < bookingDays) {
-      setValidationErr(false);
-      setErrorMsg('');
-      let rentFees = bookingDays * selectedProd.price;
-      let updateSelProd = {
-        ...selectedProd,
-        rental_fees: rentFees,
-        rental_days: bookingDays,
-      };
-      setSelectedProd(updateSelProd);
-      setShowBookform(false);
+      if (selectedProd.minimum_rent_period < bookingDays) {
+        setValidationErr(false);
+        setErrorMsg('');
+        let rentFees = bookingDays * selectedProd.price;
+        let updateSelProd = {
+          ...selectedProd,
+          rental_fees: rentFees,
+          rental_days: bookingDays,
+        };
+        setSelectedProd(updateSelProd);
+        setShowBookform(false);
+      } else {
+        setValidationErr(true);
+        setErrorMsg('choose date Greater than min Days');
+      }
     } else {
       setValidationErr(true);
-      setErrorMsg('choose date Greater than min Days');
+      setErrorMsg('Choose Product');
     }
-  }, [showBookForm, selectedProd, isValidationErr, errorMsg]);
+  }, [setValidationErr, selectedProd, setErrorMsg]);
 
   const handleCancelBooking = useCallback(() => {
+    setValidationErr(false);
     setSelectedProd({});
     setMileage(0);
     setTimeout(() => {
       setShowBookform(true);
+      setShowReturnform(true);
     }, 1000);
-  }, [selectedProd, showBookForm]);
+  }, [
+    setValidationErr,
+    setSelectedProd,
+    setMileage,
+    setShowBookform,
+    setShowReturnform,
+  ]);
 
   const handleItemSubmit = (event) => {
     let uploadSelectedItem = rentedList
@@ -130,7 +163,7 @@ function RentalIndex() {
     let copyAllProd = [...allProdList];
 
     let itemIndex = copyAllProd.findIndex(
-      (data) => data.code == selectedProd.code
+      (data) => data.code === selectedProd.code
     );
     copyAllProd[itemIndex].availability = false;
     localStorage.setItem('orginData', JSON.stringify(copyAllProd));
@@ -142,8 +175,45 @@ function RentalIndex() {
     (e) => {
       setMileage(e.target.value);
     },
-    [usedMileage]
+    [setMileage]
   );
+
+  const onChangeReturnProd = (e) => {
+    setRePro(rentedList.filter((item) => item.code === e.target.value)[0]);
+  };
+  const handleReturnItem = () => {
+    if (reProd && Object.keys(reProd).length !== 0) {
+      let todayDate = new Date(new Date().toDateString());
+      let purchaseDate = new Date(new Date(reProd.from_date).toDateString());
+      let duration = Math.round(
+        Math.abs(
+          (new Date(purchaseDate) - new Date(todayDate)) / (24 * 60 * 60 * 1000)
+        )
+      );
+      let totalAmt =
+        reProd.minimum_rent_period > duration
+          ? reProd.minimum_rent_period * reProd.price
+          : duration * reProd.price;
+
+      let totalMi = usedMileage !== 0 ? usedMileage : duration * 20;
+      debugger;
+      setInvoice({ mileage: totalMi, total: totalAmt });
+      setShowReturnform(false);
+    }
+  };
+
+  const submitReturnItem = (event) => {
+    let uploadSelectedItem = rentedList.filter(
+      (items) => items.code !== reProd.code
+    );
+    localStorage.setItem('RentedProdTable', JSON.stringify(uploadSelectedItem));
+    let copyAllProd = [...allProdList];
+    let itemIndex = copyAllProd.findIndex((data) => data.code === reProd.code);
+    copyAllProd[itemIndex].availability = true;
+    copyAllProd[itemIndex].mileage = usedMileage;
+    localStorage.setItem('orginData', JSON.stringify(copyAllProd));
+    event.preventDefault();
+  };
 
   return (
     <>
@@ -153,14 +223,18 @@ function RentalIndex() {
             <h3>Rental App</h3>
           </div>
           <div className="col-4">
-            <RentalSearch
-              searchText={searchTextbox}
-              handleSearch={handleSearch}></RentalSearch>
+            <ErrorBoundary>
+              <RentalSearch
+                searchText={searchTextbox}
+                handleSearch={handleSearch}></RentalSearch>
+            </ErrorBoundary>
           </div>
         </div>
         <div className="row">
           <div className="col">
-            <Rental rentedList={rentedList}></Rental>
+            <ErrorBoundary>
+              <Rental rentedList={productData}></Rental>{' '}
+            </ErrorBoundary>
           </div>
         </div>
         <div className="row">
@@ -171,8 +245,15 @@ function RentalIndex() {
                 handleUsedMileage: handleUsedMileage,
                 usedMileage: usedMileage,
                 handleCancelBooking: handleCancelBooking,
+                onChangeReturnProd: onChangeReturnProd,
+                handleReturnItem: handleReturnItem,
+                showReturnForm: showReturnForm,
+                invoice: invoice,
+                submitReturnItem: submitReturnItem,
               }}>
-              <ReturnItem></ReturnItem>
+              <ErrorBoundary>
+                <ReturnItem></ReturnItem>
+              </ErrorBoundary>
             </ReturnContext.Provider>
             <BookContext.Provider
               value={{
@@ -188,7 +269,9 @@ function RentalIndex() {
                 isValidationErr: isValidationErr,
                 errorMsg: errorMsg,
               }}>
-              <BookItems></BookItems>
+              <ErrorBoundary>
+                <BookItems></BookItems>
+              </ErrorBoundary>
             </BookContext.Provider>
           </div>
         </div>
