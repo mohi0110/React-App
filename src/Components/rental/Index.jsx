@@ -15,7 +15,10 @@ function RentalIndex() {
   const [selectedProd, setSelectedProd] = useState({});
   const [rentedList, setRentedList] = useState(null);
   const [showBookForm, setShowBookform] = useState(true);
+  const [usedMileage, setMileage] = useState(Number);
+
   //localStorage.removeItem('RentedProdTable');
+  //localStorage.removeItem('orginData');
   localStorage.getItem('orginData') == null &&
     localStorage.setItem('orginData', JSON.stringify(RentalData));
 
@@ -115,10 +118,13 @@ function RentalIndex() {
 
   const handleCancelBooking = useCallback(() => {
     setSelectedProd({});
-    setShowBookform(true);
+    setMileage(0);
+    setTimeout(() => {
+      setShowBookform(true);
+    }, 1000);
   }, [selectedProd, showBookForm]);
 
-  const handleItemSubmit = () => {
+  const handleItemSubmit = (event) => {
     let uploadSelectedItem = rentedList
       ? [...rentedList, selectedProd]
       : [selectedProd];
@@ -131,7 +137,15 @@ function RentalIndex() {
     copyAllProd[itemIndex].availability = false;
     localStorage.setItem('orginData', JSON.stringify(copyAllProd));
     setRentedList(JSON.parse(localStorage.getItem('RentedProdTable')));
+    event.preventDefault();
   };
+  const handleUsedMileage = useCallback(
+    (e) => {
+      setMileage(e.target.value);
+    },
+    [usedMileage]
+  );
+
   return (
     <>
       <div className="container mt-4">
@@ -152,7 +166,13 @@ function RentalIndex() {
         </div>
         <div className="row">
           <div className="d-flex justify-content-end">
-            <ReturnContext.Provider value={rentedList}>
+            <ReturnContext.Provider
+              value={{
+                rentedList: rentedList,
+                handleUsedMileage: handleUsedMileage,
+                usedMileage: usedMileage,
+                handleCancelBooking: handleCancelBooking,
+              }}>
               <ReturnItem></ReturnItem>
             </ReturnContext.Provider>
             <BookContext.Provider
@@ -169,7 +189,7 @@ function RentalIndex() {
                 isValidationErr: isValidationErr,
                 errorMsg: errorMsg,
               }}>
-              <BookItems name="mohan"></BookItems>
+              <BookItems></BookItems>
             </BookContext.Provider>
           </div>
         </div>

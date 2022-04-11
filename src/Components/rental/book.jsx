@@ -8,7 +8,12 @@ function BookItems({ handleBookModal, handleCloseModal }) {
 
   return (
     <>
-      <form>
+      <form
+        onSubmit={() => {
+          handleCloseModal();
+          bkContext.handleItemSubmit();
+        }}
+        id="bookForm">
         {bkContext.showBookForm ? (
           <div className="container">
             {bkContext.isValidationErr && (
@@ -187,13 +192,7 @@ function BookItems({ handleBookModal, handleCloseModal }) {
                 }}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className="btn btn-primary m-1"
-                onClick={() => {
-                  handleCloseModal();
-                  bkContext.handleItemSubmit();
-                }}>
+              <button type="submit" className="btn btn-primary m-1">
                 Confirm
               </button>
             </div>

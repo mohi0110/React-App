@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Modal } from 'react-bootstrap';
+
 const ModalHOC = (props) => (WrappedComponent) => {
   class ModalWrap extends React.Component {
     constructor(props) {
@@ -21,8 +22,12 @@ const ModalHOC = (props) => (WrappedComponent) => {
           <button className={props.buttonClass} onClick={this.openModal}>
             {props.buttonName}
           </button>
-          <Modal show={this.state.viewModal} onHide={this.closeModal}>
-            <Modal.Header closeButton>{props.modalName}</Modal.Header>
+          <Modal
+            show={this.state.viewModal}
+            onHide={this.closeModal}
+            backdrop="static"
+            keyboard={false}>
+            <Modal.Header>{props.modalName}</Modal.Header>
             <Modal.Body>
               <WrappedComponent
                 handleBookModal={this.openModal}
