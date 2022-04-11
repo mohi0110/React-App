@@ -28,18 +28,16 @@ function RentalIndex() {
     setAllProdList(JSON.parse(localStorage.getItem('orginData')));
   }, []);
 
-  const handleSearch = useCallback(
-    (e) => {
-      setSearchTextbox(e.target.value);
-      let localData = JSON.parse(localStorage.getItem('RentedProdTable'));
-      setRentedList(
-        localData.filter((data) =>
-          data.name.toLowerCase().includes(e.target.value)
-        )
-      );
-    },
-    [rentedList, searchTextbox]
-  );
+  const handleSearch = (e) => {
+    setSearchTextbox(e.target.value);
+    let localData = JSON.parse(localStorage.getItem('RentedProdTable')).filter(
+      (data) => data.name.toLowerCase().includes(e.target.value)
+    );
+    let uniqueData = [
+      ...new Map(localData.map((items) => [items.code, items])).values(),
+    ];
+    setRentedList(uniqueData);
+  };
 
   const handleFromDate = useCallback(
     (e) => {
@@ -139,6 +137,7 @@ function RentalIndex() {
     setRentedList(JSON.parse(localStorage.getItem('RentedProdTable')));
     event.preventDefault();
   };
+
   const handleUsedMileage = useCallback(
     (e) => {
       setMileage(e.target.value);
